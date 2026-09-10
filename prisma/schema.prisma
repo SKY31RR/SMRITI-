@@ -1,0 +1,238 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  passwordHash  String
+  role          String   // "PATIENT" | "CAREGIVER"
+  avatar        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  patientProfile   PatientProfile?
+  caregiverProfile CaregiverProfile?
+  notifications    Notification[]
+  medicationLogs   MedicationLog[]
+  taskLogs         TaskLog[]
+  careNotes        CareNote[]
+}
+
+model PatientProfile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dateOfBirth    String?
+  diagnosisNotes String?
+  emergencyNotes String?
+  roomOrAddress  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  caregivers        PatientCaregiverRelationship[]
+  medications       Medication[]
+  medicationLogs    MedicationLog[]
+  careTasks         CareTask[]
+  taskLogs          TaskLog[]
+  appointments      Appointment[]
+  careNotes         CareNote[]
+  memoryPeople      MemoryPerson[]
+  memories          Memory[]
+  emergencyContacts EmergencyContact[]
+  safetyAlerts      SafetyAlert[]
+}
+
+model CaregiverProfile {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone            String?
+  relationshipRole String?  // e.g. "Primary Family Caregiver", "Nurse"
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  patients PatientCaregiverRelationship[]
+}
+
+model PatientCaregiverRelationship {
+  id          String   @id @default(uuid())
+  patientId   String
+  caregiverId String
+  accessLevel String   @default("PRIMARY") // "PRIMARY", "SECONDARY"
+  status      String   @default("ACTIVE")  // "ACTIVE", "PENDING"
+  createdAt   DateTime @default(now())
+
+  patient   PatientProfile   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  caregiver CaregiverProfile @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  @@unique([patientId, caregiverId])
+}
+
+model Medication {
+  id          String   @id @default(uuid())
+  patientId   String
+  name        String
+  dosage      String
+  frequency   String   // e.g., "Daily", "Twice Daily", "With Meals"
+  timesOfDay  String   // JSON string or comma-separated e.g. "08:00, 20:00"
+  startDate   String
+  endDate     String?
+  notes       String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  patient PatientProfile  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  logs    MedicationLog[]
+}
+
+model MedicationLog {
+  id            String    @id @default(uuid())
+  medicationId  String
+  patientId     String
+  scheduledFor  String    // e.g., "2026-08-22 08:00"
+  takenAt       DateTime?
+  status        String    @default("PENDING") // "TAKEN", "MISSED", "PENDING"
+  takenByUserId String?
+  createdAt     DateTime  @default(now())
+
+  medication Medication     @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  patient    PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  takenBy    User?          @relation(fields: [takenByUserId], references: [id])
+}
+
+model CareTask {
+  id            String   @id @default(uuid())
+  patientId     String
+  title         String
+  category      String   // "Medication", "Breakfast", "Hydration", "Walk", "Exercise", "Memory activity", "Rest", "Custom"
+  scheduledTime String   // e.g. "09:00"
+  recurring     String   @default("Daily")
+  notes         String?
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  patient PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  logs    TaskLog[]
+}
+
+model TaskLog {
+  id              String    @id @default(uuid())
+  taskId          String
+  patientId       String
+  date            String    // "YYYY-MM-DD"
+  completed       Boolean   @default(false)
+  completedAt     DateTime?
+  completedByUserId String?
+  createdAt       DateTime  @default(now())
+
+  task      CareTask       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  patient   PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  completedBy User?        @relation(fields: [completedByUserId], references: [id])
+}
+
+model Appointment {
+  id        String   @id @default(uuid())
+  patientId String
+  title     String
+  date      String   // "YYYY-MM-DD"
+  time      String   // "HH:MM"
+  provider  String
+  location  String
+  notes     String?
+  status    String   @default("SCHEDULED") // "SCHEDULED", "COMPLETED", "CANCELLED"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patient PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+model CareNote {
+  id          String   @id @default(uuid())
+  patientId   String
+  caregiverId String
+  mood        String   // "Peaceful", "Happy", "Anxious", "Confused", "Restless", "Sad"
+  activity    String   // "Morning Routine", "Physical Exercise", "Family Visit", "Mealtime", "Rest"
+  tags        String   // Comma-separated tags
+  notes       String
+  createdAt   DateTime @default(now())
+
+  patient   PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  caregiver User           @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+}
+
+model MemoryPerson {
+  id           String   @id @default(uuid())
+  patientId    String
+  name         String
+  relationship String   // e.g. "Daughter", "Son", "Spouse", "Best Friend"
+  photoUrl     String?
+  description  String
+  contactPhone String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  patient  PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  memories Memory[]
+}
+
+model Memory {
+  id             String   @id @default(uuid())
+  patientId      String
+  memoryPersonId String?
+  title          String
+  description    String
+  memoryDate     String?  // e.g. "Summer 1978"
+  imageUrl       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  patient      PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  memoryPerson MemoryPerson?  @relation(fields: [memoryPersonId], references: [id], onDelete: SetNull)
+}
+
+model EmergencyContact {
+  id           String   @id @default(uuid())
+  patientId    String
+  name         String
+  relationship String
+  phone        String
+  isPrimary    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  patient PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+model SafetyAlert {
+  id        String   @id @default(uuid())
+  patientId String
+  alertType String   // "EMERGENCY_BUTTON", "MISSED_MEDICATION", "WANDERING_RISK"
+  message   String
+  severity  String   // "HIGH", "MEDIUM", "LOW"
+  status    String   @default("ACTIVE") // "ACTIVE", "ACKNOWLEDGED"
+  createdAt DateTime @default(now())
+
+  patient PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String   // "MEDICATION", "TASK", "APPOINTMENT", "SAFETY", "CAREGIVER"
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

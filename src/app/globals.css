@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #C46473;
+  --color-primary-light: #E08B98;
+  --color-terracotta: #D98877;
+  --color-amber-gold: #E5AA7E;
+  --color-gold-accent: #E6C387;
+  --color-emergency-red: #E63946;
+
+  --bg-dark-base: #140E10;
+  --bg-dark-surface: #1E1518;
+  --bg-dark-card: #2B1D22;
+  --bg-glass-card: rgba(43, 29, 34, 0.75);
+  --bg-glass-nav: rgba(26, 18, 21, 0.92);
+
+  --color-cream-base: #FAF5EF;
+  --color-cream-muted: #EADFD3;
+
+  --text-primary: #FAF5EF;
+  --text-secondary: #D4C3B5;
+  --text-muted: #9E8B80;
+
+  --gradient-lotus: linear-gradient(135deg, #B85363 0%, #D98877 50%, #E5AA7E 100%);
+  --gradient-emergency: linear-gradient(135deg, #E63946 0%, #D62828 100%);
+  --gradient-card: linear-gradient(145deg, rgba(53, 35, 41, 0.75) 0%, rgba(30, 21, 24, 0.85) 100%);
+
+  --border-glass: 1px solid rgba(224, 139, 152, 0.25);
+  --border-emergency: 2px solid rgba(230, 57, 70, 0.7);
+
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, sans-serif;
+}
+
+body {
+  background-color: var(--bg-dark-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  background-image: 
+    radial-gradient(ellipse at 20% -10%, rgba(196, 100, 115, 0.25) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 60%, rgba(217, 136, 119, 0.18) 0%, transparent 50%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, .font-serif {
+  font-family: var(--font-serif);
+  font-weight: 600;
+}
+
+/* Ensure ALL input fields have high-contrast dark text and distinct backgrounds */
+input, select, textarea {
+  color: #0f172a !important;
+  background-color: #f8fafc !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+.text-gradient {
+  background: var(--gradient-lotus);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gold {
+  color: var(--color-gold-accent);
+}
+
+.bg-glass {
+  background: var(--gradient-card);
+  backdrop-filter: blur(16px);
+  border: var(--border-glass);
+}
+
+.btn-sos {
+  background: var(--gradient-emergency);
+  color: white;
+  font-weight: 700;
+  border-radius: 9999px;
+  box-shadow: 0 0 20px rgba(230, 57, 70, 0.4);
+  transition: all 0.3s ease;
+}
+
+.btn-sos:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(230, 57, 70, 0.7);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-amber-gold);
+  outline-offset: 2px;
+}
